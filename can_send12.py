@@ -90,13 +90,15 @@ def TachoReset(bus,CanID):
         recv_message = bus.recv(2.0) # 2 s Timeout
         print (recv_message)    
 
-def TachoReset2020(bus,CanID):
+
+def TachoReset2020(bus: can.bus.BusABC, CanID: int):
         msg = can.Message(arbitration_id=CanID,data=[0x02, 0x10, 0x60, 0xAA, 0xAA, 0xAA,0xAA,0xAA],is_extended_id=False)
         bus.send(msg)
-        recv_message = bus.recv(2.0) # 2 s Timeout
-        print (recv_message)
+        recv_message = UDS_Receive(bus, CanID)
+
         msg = can.Message(arbitration_id=CanID,data=[0x04, 0x2e, 0xfd, 0x00, 0x01, 0xAA,0xAA,0xAA],is_extended_id=False)
         bus.send(msg)        
+        recv_message = bus.recv(2.0) # 2s Timeout
 
 def UDS_ReceiveDecodeAndRemovePadding(SeedVomTacho):
         CountFrames=int(len(SeedVomTacho)/8)
@@ -126,7 +128,8 @@ def UDS_ReceiveDecodeAndRemovePadding(SeedVomTacho):
 #        recv_message = bus.recv(2.0) # 2 s Timeout
 #        print (recv_message.data)        
 
-def UDS_DiagnosticSessionControl(bus,CanID,diagnosticSessionType):
+
+def UDS_DiagnosticSessionControl(bus: can.bus.BusABC, CanID: int, diagnosticSessionType: int):
         # 0x01 Default Session
         # 0x02 Programming session
         # 0x03 Extended diagnostic session
@@ -147,7 +150,7 @@ def UDS_DiagnosticSessionControl(bus,CanID,diagnosticSessionType):
         #            break    
 
 
-def UDS_RoutineControl(bus,CanID):
+def UDS_RoutineControl(bus: can.bus.BusABC, CanID: int):
         # 0x01 Default Session
         # 0x02 Programming session
         # 0x03 Extended diagnostic session
@@ -161,7 +164,7 @@ def UDS_RoutineControl(bus,CanID):
             if recv_message != None:
                 if recv_message.data[1] == 0x7F and recv_message.data[2] == 0x10:
                     #print("ID 0x%3.3x " % (CanID),end='')
-                    print ("error: diagnosticSessionType: 0x%x " % (diagnosticSessionType),end='')
+                    print("error")
                     print (str( codecs.encode( bytearray(recv_message.data) ,'hex')) ) 
                     break    
 
@@ -255,11 +258,10 @@ def UDS_SecurityAccess(bus,CanID,Magic):
  sys.exit(0)
 
 
-def UDS_SecurityAccess_SA2(bus,CanID):
-        
+def UDS_SecurityAccess_SA2(bus: can.bus.BusABC, CanID: int):
         SA2_ARRAY = [
                     ['814a246807814a0d87371ab7aa8184a2a371e84a0a879567b455931a38d24749932849ac5d4a1e681293057cd35e4a0d939135faac8703f941784a0781879ade3580814981877d9ab4674c' , '',''],
-                    ['814a24680d814a0d8753040384818476cd4b4e4a0a874973b5f193bd4ebe4d4993d39e4afb4a1e681193b05da7404a0d93a47d9fab87534586ea4a07818740a3111f8149818735db54ec4c' , '',''],
+                    ['814a24680d814a0d8753040384818476cd4b4e4a0a874973b5f193bd4ebe4d4993d39e4afb4a1e681193b05da7404a0d93a47d9fab87534586ea4a07818740a3111f8149818735db54ec4c' , '5K0920863','0725'],
                     ['814a24680d814a0d87653040388184f76cd4b44a0a8724973b5f93ebd4ebe44993cd39e4af4a1e6811931b05da744a0d93ca47d9fa87b534586e4a078187040a311181498187d35db54e4c' , '',''],
                     ['814a24680d814a0d879653040381845f76cd4b4a0a87024973b5935ebd4ebe49930cd39e4a4a1e68119351b05da74a0d87fb53458693bca47d9f4a0781872040a31181498187fd35db544c' , '',''],
                     ['814a24680f814a0d87063bc8068184a2a371e84a0a878f44926c931a38d24749932849ac5d4a1e68089303f6459a4a0d939135faac8703f941784a07818757ad9e238149818736e40b3c4c' , '',''],
@@ -267,7 +269,7 @@ def UDS_SecurityAccess_SA2(bus,CanID):
                     ['814a246812814a0d87fb67a9c18184565845324a0a870142bcd193fb83250a49933acefd244a1e680b93ae7823cc4a0d938904532287dcee87324a078187d68a42bf8149818716532cd94c' , '','' ],
                     ['814a246817814a0d87a312d9e9819339c72acf4a0a87ed9b72a784fad16b7a49932c88d9c84a1e680a93a2acad914a0d841d0796ef87c1a2f9e44a07818730a83c2e81498187bec2dee54c' , '7E0920880J', 'SW0509'],
                     ['814a246817814a0d87a8312d9e81933e9c72ac4a0a87e6d9b72a84f9ad16b7499327c88d9c4a1e680a93a02acad94a0d841ed0796e87c31a2f9e4a0781873d0a83c281498187b4ec2dee4c' , '',''],
-                    ['814a246817814a0d87aa312d9e8193039c72ac4a0a878ed9b72a84bfad16b749932c88d9c84a1e680a932a2acad94a0d875c1a2f9e8401d0796e4a078187f30a83c2814981876bec2dee4c' , '7E0920880S 7E0920882A 5N0920883H 1K8920885L 7N0920880N 7N5920880J','SW1008 SW1018 SW1104 SW1109 SW2030 SW4030'],                                    
+                    ['814a246817814a0d87aa312d9e8193039c72ac4a0a878ed9b72a84bfad16b749932c88d9c84a1e680a932a2acad94a0d875c1a2f9e8401d0796e4a078187f30a83c2814981876bec2dee4c' , '7E0920880S 7E0920882A 5N0920883F 5N0920883H 1K8920885L 7N0920880N 7N5920880J','SW1008 SW1018 SW1104 SW1109 SW2030 SW4030'],                                    
                     ]
         
         print("SA2 Array Key Count: %d"%(len(SA2_ARRAY)))
@@ -275,7 +277,7 @@ def UDS_SecurityAccess_SA2(bus,CanID):
         SA2_Key_Counter=0
         while SA2_Key_Counter<len(SA2_ARRAY):
             SA2_HEX = SA2_ARRAY[SA2_Key_Counter][0]
-            print("\nUsing SA2 Key[%d %s %s]: %s\n"%(SA2_Key_Counter,SA2_ARRAY[SA2_Key_Counter][1],SA2_ARRAY[SA2_Key_Counter][2],SA2_HEX))
+            print("\nUsing SA2 Key[%d %s %s]: %s" % (SA2_Key_Counter, SA2_ARRAY[SA2_Key_Counter][1], SA2_ARRAY[SA2_Key_Counter][2], SA2_HEX))
             SA2_Key_Counter=SA2_Key_Counter+1
             SA2 = codecs.decode(SA2_HEX, 'hex')           
     
@@ -298,7 +300,7 @@ def UDS_SecurityAccess_SA2(bus,CanID):
             print ("SeedVal: 0x%x " % (SeedVal),end="")
 
             SeedValAnswer = Tacho_SA2_Seed_Calc(SeedVal,SA2)      
-            print ("SeedValAnswer: 0x%x " % (SeedValAnswer),end="")
+            print("SeedValAnswer: 0x%x " % (SeedValAnswer))
     
             SeedValAnswerByteArr =  int(SeedValAnswer).to_bytes(4, byteorder='big') 
   
@@ -582,13 +584,15 @@ def UDS_TesterPresent(bus,CanID):
                     #print (recv_message)
                     break
 
-def UDS_Receive(bus,CanID,buf=" "):
+
+def UDS_Receive(bus: can.bus.BusABC, CanID: int, buf=" "):
         SingleFrame = False
 
         while True:
          recv_message = bus.recv(2.0) # 2 s Timeout
          if recv_message == None:
-                return ["Timeout"]
+             print("Timeout")
+             return None
          if recv_message.arbitration_id == 0x30c:  #workaround für MQB X FW
                 #print("Workaround for MQB 0x30c")
                 continue
@@ -1098,9 +1102,7 @@ def TachoDump3DCode(bus,FilenamePrefix):
         f.close()
 
 
-
-
-def TachoDumpEeprom(bus,FilenamePrefix):
+def TachoDumpEeprom(bus: can.bus.BusABC, FilenamePrefix: str):
         now = datetime.now()
         dt_string = now.strftime("%d.%m.%Y.%H.%M.%S")
         
@@ -1111,7 +1113,8 @@ def TachoDumpEeprom(bus,FilenamePrefix):
             f.write(TmpData)
         f.close()
 
-def TachoDumpFlash(bus,FilenamePrefix):
+
+def TachoDumpFlash(bus: can.bus.BusABC, FilenamePrefix: str):
         now = datetime.now()
         dt_string = now.strftime("%d.%m.%Y.%H.%M.%S")
         
@@ -1608,13 +1611,13 @@ def send_one():
     #bus = can.interface.Bus()
 
     # Using specific buses works similar:
-    bus = can.interface.Bus(bustype='socketcan', channel='can0', bitrate=500000)
-    bus1 = can.interface.Bus(bustype='socketcan', channel='can1', bitrate=500000)
+    with can.interface.Bus(bustype='socketcan', channel='can0', bitrate=500000) as bus, \
+            can.interface.Bus(bustype='socketcan', channel='can1', bitrate=500000) as bus1:
 
-    MK60EC1ListOfLogins = [30204,30205,30206,30207,30208,30210,40168,31857,5641,
+      MK60EC1ListOfLogins = [30204,30205,30206,30207,30208,30210,40168,31857,5641,
                            10149,11122,11123,40304,25004,11966,40171,24435,15081,25144,14913,30203]
 
-    try:
+      try:
         if len(sys.argv) > 1:
             print (sys.argv[1])
 
@@ -2199,7 +2202,14 @@ def send_one():
                 return
             
             if (sys.argv[1]) == "-SA2":
-                Tacho_SA2_Seed_Calc(0x12345678)
+                TachoReset2020(bus, 0x714)
+                sleep(2)
+
+                UDS_DiagnosticSessionControl(bus, 0x714, 0x60)
+                UDS_RoutineControl(bus, 0x714)
+                UDS_DiagnosticSessionControl(bus, 0x714, 0x02)
+
+                UDS_SecurityAccess_SA2(bus, 0x714)
                 sys.exit(0)
             
             if (sys.argv[1]) == "-TEST":   
@@ -2642,7 +2652,7 @@ def send_one():
                 #print( " "+str(hex(Tel))+" "+str(hex(Sel))+" "+str(hex(Addr))+" "+str( codecs.encode( bytearray(TmpData) ,'hex') ) )
 
                 FilenamePrefix = "Vagtacho"
-                if sys.argv[2] != "":
+                if len(sys.argv) > 2 and sys.argv[2] != "":
                    Directory = sys.argv[2]
                 else:
                    Directory = "./"
@@ -2757,7 +2767,7 @@ def send_one():
         if len(sys.argv) > 1:
             if (sys.argv[1]) == "-TachoDumpRam":
                 FilenamePrefix = TachoIDString(bus)                      
-                if sys.argv[2] != "":
+                if len(sys.argv) > 2 and sys.argv[2] != "":
                    Directory = sys.argv[2]
                 else:
                    Directory = "./"
@@ -2787,7 +2797,7 @@ def send_one():
         if len(sys.argv) > 1:
             if (sys.argv[1]) == "-TachoDump3DFlash":
                 FilenamePrefix = TachoIDString(bus)
-                if sys.argv[2] != "":
+                if len(sys.argv) > 2 and sys.argv[2] != "":
                    Directory = sys.argv[2]
                 else:
                    Directory = "./"
@@ -2797,7 +2807,7 @@ def send_one():
             if (sys.argv[1]) == "-TachoDump3DCode":
                 FilenamePrefix = TachoIDString(bus)
                 print(FilenamePrefix)
-                if sys.argv[2] != "":
+                if len(sys.argv) > 2 and sys.argv[2] != "":
                    Directory = sys.argv[2]
                 else:
                    Directory = "./"
@@ -2818,7 +2828,7 @@ def send_one():
         if len(sys.argv) > 1:
             if (sys.argv[1]) == "-TachoDumpEeprom":
                 FilenamePrefix = TachoIDString(bus)                      
-                if sys.argv[2] != "":
+                if len(sys.argv) > 2 and sys.argv[2] != "":
                    Directory = sys.argv[2]
                 else:
                    Directory = "./"
@@ -2827,7 +2837,7 @@ def send_one():
         if len(sys.argv) > 1:
             if (sys.argv[1]) == "-TachoDumpFlash":                      
                 FilenamePrefix = TachoIDString(bus)
-                if sys.argv[2] != "":
+                if len(sys.argv) > 2 and sys.argv[2] != "":
                    Directory = sys.argv[2]
                 else:
                    Directory = "./"
@@ -2891,7 +2901,7 @@ def send_one():
                   print(TmpData,end='')
                   print( str( codecs.encode( bytearray(TmpData) ,'hex') ) )                        
 
-    except can.CanError:
+      except can.CanError:
         print("Message NOT sent")
 
 if __name__ == '__main__':
